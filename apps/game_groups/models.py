@@ -19,11 +19,12 @@ class Group(models.Model):
 class Rating(models.Model):
     user = models.ForeignKey(User, related_name="ratings")
     game = models.ForeignKey(Game, related_name="ratings")
-    rating = models.IntegerField(default=1)
+    rating = models.IntegerField(default=0)
     RATING_CHOICES = (
-        (10, "Definitely!"),
-        (1, "Sure"),
-        (-1, "I'd Rather Not"),
+        (10, "Always!"),
+        (5, "Yes"),
+        (0, "No opinion"),
+        (-3, "I'd Rather Not"),
         (-100, "Absoultely Not!")
     )
 

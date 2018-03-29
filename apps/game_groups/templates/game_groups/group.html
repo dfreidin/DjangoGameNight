@@ -4,7 +4,37 @@
 
 {% block content %}
     <h1>{{group.name}}</h1>
-    <p><a href="{% url 'home' %}">Home</a></p>
+    {% if group.owner == request.user %}
+        <p><div class="dropdown">
+            <button class="btn btn-secondary btn-sm dropdown-toggle" id="nameEditButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Edit Group Name
+            </button>
+            <div class="dropdown-menu">
+                <form id="group_name_form" class="px-4 py-3" action="{% url 'edit_group_name' id=group.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="group_name">Group Name</label>
+                        <input type="text" class="form-control" id="group_name" name="group_name" value="{{group.name}}">
+                    </div>
+                    <input type="submit" class="btn btn-primary" value="Update">
+                </form>
+            </div>
+        </div></p>
+    {% endif %}
+    <p><button type="button" id="random_game_button" action="{% url 'get_random_game' id=group.id %}" class="btn btn-primary btn-lg" data-toggle="modal" data-target=".random_game_choice">Choose a Game!</button></p>
+    <div class="modal fade random_game_choice" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Your Game</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
     <hr>
     <h3>Members:</h3>
     <p><a class="show_hide" linked-element="members" href="#">Show/Hide</a></p>
@@ -25,7 +55,7 @@
                         <td><a href="{% url 'profile' username=user.username %}">{{user.username}}</a></td>
                         <td>{{user.email}}</td>
                         {% if group.owner == request.user %}
-                            <td><a href="{% url 'remove_from_group' id=group.id username=user.username %}">Remove</a></td>
+                            <td><a href="{% url 'remove_from_group' id=group.id username=user.username %}">{% if user != request.user %}Remove{% endif %}</a></td>
                         {% endif %}
                     </tr>
                 {% endfor %}
@@ -45,29 +75,8 @@
     </div>
     <hr>
     <h3>Suggested Games:</h3>
-    <p><a class="show_hide" linked-element="games" href="#">Show/Hide Table</a> | <a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
-    <table class="table table-striped games">
-        <thead>
-            <tr>
-                <th>Box Image</th>
-                <th>Name</th>
-                <th>Owned By</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for game in games %}
-                <tr>
-                    <td><img class="game_images" src="{{game.thumb}}"></td>
-                    <td><a href="{{game.link}}" target="_blank">{{game.name}}</a></td>
-                    <td>
-                        {% for user in group.members.all %}
-                            {% if user in game.owners %}
-                                <a href="{% url 'profile' username=user.username %}">{{user.username}}</a> 
-                            {% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% include "game_groups/game_filter.html" %}
+    <div id="game_table_div">
+        {% include "game_groups/owned_games_table.html" %}
+    </div>
 {% endblock %}

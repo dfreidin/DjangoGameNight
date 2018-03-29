@@ -6,7 +6,17 @@
             <tr>
                 <th>Box Image</th>
                 <th>Name</th>
-                <th>Would you like to play this?</th>
+                <th class="d-none d-table-cell-lg">Categories</th>
+                <th class="d-none d-table-cell-lg">Mechanics</th>
+                <th class="d-none d-table-cell-lg">Player Count</th>
+                {% if group %}
+                    <th>Owned By</th>
+                {% else %}
+                    <th>Would you like to play this?</th>
+                    {% if user == request.user %}
+                        <th>Actions</th>
+                    {% endif %}
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -14,15 +24,34 @@
                 <tr>
                     <td><img class="game_images" src="{{game.thumb}}"></td>
                     <td><a href="{{game.link}}" target="_blank">{{game.name}}</a></td>
-                    <td><select name="{{game.bgg_id}}">
-                        <option value="10" {% if game.rating == 10 %}selected{% endif %}>Definitely!</option>
-                        <option value="1" {% if game.rating == 1 %}selected{% endif %}>Sure</option>
-                        <option value="-1" {% if game.rating == -1 %}selected{% endif %}>I'd rather not</option>
-                        <option value="-100" {% if game.rating == -100 %}selected{% endif %}>Absolutely not!</option>
-                    </select></td>
+                    <td class="d-none d-table-cell-lg">{{game.categories}}</td>
+                    <td class="d-none d-table-cell-lg">{{game.mechanics}}</td>
+                    <td class="d-none d-table-cell-lg">{{game.player_count}}</td>
+                    {% if group %}
+                        <td>
+                            {% for user in group.members.all %}
+                                {% if user in game.owners %}
+                                    <a href="{% url 'profile' username=user.username %}">{{user.username}}</a> 
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    {% else %}
+                        <td><select name="{{game.bgg_id}}">
+                            <option value="10" {% if game.rating == 10 %}selected{% endif %}>Always!</option>
+                            <option value="5" {% if game.rating == 5 %}selected{% endif %}>Yes</option>
+                            <option value="0" {% if game.rating == 0 %}selected{% endif %}>No opinion</option>
+                            <option value="-3" {% if game.rating == -3 %}selected{% endif %}>I'd rather not</option>
+                            <option value="-100" {% if game.rating == -100 %}selected{% endif %}>Absolutely not!</option>
+                        </select></td>
+                        {% if user == request.user %}
+                            <td><a href="{% url 'remove_game' bgg_id=game.bgg_id %}">Remove</a></td>
+                        {% endif %}
+                    {% endif %}
                 </tr>
             {% endfor %}
         </tbody>
     </table>
-    <input type="submit" value="Update ratings" class="btn btn-primary">
+    {% if not group %}
+        <input type="submit" value="Update ratings" class="btn btn-primary">
+    {% endif %}
 </form>

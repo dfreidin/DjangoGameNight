@@ -4,6 +4,8 @@
 
 {% block content %}
     <h1>{{user.username}}'s Games</h1>
-    <p><a href="{% url 'home' %}">Home</a></p>
-    {% include "game_groups/owned_games_table.html" %}
+    {% include "game_groups/game_filter.html" %}
+    <div id="game_table_div">
+        {% include "game_groups/owned_games_table.html" %}
+    </div>
 {% endblock %}

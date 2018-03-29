@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from django.db.models import Sum
 import xml.etree.ElementTree as ET
 import requests
+from random import randint
 from time import sleep
 from .models import *
 
@@ -52,7 +53,7 @@ def logout(request):
     auth_logout(request)
     return redirect(index)
 
-def game_table_data(request, games):
+def game_table_data(request, games, filters=None):
     id_list = ""
     for game in games:
         if id_list != "":
@@ -67,31 +68,47 @@ def game_table_data(request, games):
         game_name = g.find("name").attrib["value"]
         bgg_link = "https://www.boardgamegeek.com/boardgame/" + str(g_obj.bgg_id)
         game_rating, created = Rating.objects.get_or_create(user=request.user, game=g_obj)
+        min_players = g.find("minplayers").attrib["value"]
+        max_players = g.find("maxplayers").attrib["value"]
+        player_count = min_players + " - " + max_players
+        game_categories = ""
+        game_mechanics = ""
+        for l in g.iter("link"):
+            if l.attrib["type"] == "boardgamecategory":
+                game_categories += l.attrib["value"] + ", "
+            elif l.attrib["type"] == "boardgamemechanic":
+                game_mechanics += l.attrib["value"] + ", "
+        if filters:
+            if int(max_players) < filters["min_players"] or int(min_players) > filters["max_players"] or filters["category"] not in game_categories.lower() or filters["mechanic"] not in game_mechanics.lower():
+                continue
         list_data.append({
             "bgg_id": g_obj.bgg_id,
             "thumb": thumb_url,
             "name": game_name,
             "link": bgg_link,
             "rating": game_rating.rating,
-            "owners": g_obj.owners.all()
+            "owners": g_obj.owners.all(),
+            "player_count": player_count,
+            "categories": game_categories,
+            "mechanics": game_mechanics
         })
     return list_data
 
 @login_required(login_url=login)
 def home(request):
     games = game_table_data(request, request.user.owned_games.all())
+    games.sort(key=lambda x: x["name"])
     other_users = User.objects.exclude(id=request.user.id)
-    return render(request, "game_groups/home.html", {"games": games, "other_users": other_users})
+    return render(request, "game_groups/home.html", {"games": games, "other_users": other_users, "table_type": "home"})
 
 @login_required(login_url=login)
 def add_game(request):
-    if request.method == "GET":
-        return render(request, "game_groups/add_game.html")
-    elif request.method == "POST":
-        bgg_id = request.POST["game_choice"]
-        game, created = Game.objects.get_or_create(bgg_id=bgg_id)
-        game.owners.add(request.user)
+    if request.method != "POST":
         return redirect(home)
+    bgg_id = request.POST["game_choice"]
+    game, created = Game.objects.get_or_create(bgg_id=bgg_id)
+    game.owners.add(request.user)
+    return redirect(home)
 
 @login_required(login_url=login)
 def search_games(request):
@@ -136,7 +153,8 @@ def profile(request, username):
     if len(users) < 1:
         return redirect(home)
     games = game_table_data(request, users[0].owned_games.all())
-    return render(request, "game_groups/profile.html", {"user": users[0], "games": games})
+    games.sort(key=lambda x: x["name"])
+    return render(request, "game_groups/profile.html", {"user": users[0], "games": games, "table_type": "profile"})
 
 @login_required(login_url=login)
 def new_group(request):
@@ -150,9 +168,9 @@ def group(request, id):
     if len(groups) < 1:
         return redirect(home)
     other_users = User.objects.exclude(game_groups=groups[0])
-    sorted_games = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).order_by("-total_rating")
+    sorted_games = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
     games = game_table_data(request, sorted_games)
-    return render(request, "game_groups/group.html", {"group": groups[0], "other_users": other_users, "games": games})
+    return render(request, "game_groups/group.html", {"group": groups[0], "other_users": other_users, "games": games, "table_type": "group"})
 
 @login_required(login_url=login)
 def add_to_group(request, id):
@@ -199,14 +217,13 @@ def get_bgg_collection(request):
 
 @login_required(login_url=login)
 def add_from_collection(request):
-    if request.method == "GET":
-        return render(request, "game_groups/collection.html")
-    elif request.method == "POST":
-        choices = request.POST.getlist("game_choices")
-        for bgg_id in choices:
-            game, created = Game.objects.get_or_create(bgg_id=bgg_id)
-            game.owners.add(request.user)
+    if request.method != "POST":
         return redirect(home)
+    choices = request.POST.getlist("game_choices")
+    for bgg_id in choices:
+        game, created = Game.objects.get_or_create(bgg_id=bgg_id)
+        game.owners.add(request.user)
+    return redirect(home)
 
 @login_required(login_url=login)
 def remove_from_group(request, id, username):
@@ -216,3 +233,67 @@ def remove_from_group(request, id, username):
         return redirect(home)
     groups[0].members.remove(users[0])
     return redirect(group, id=id)
+
+@login_required(login_url=login)
+def filter_table(request, table_type, username=None, group_id=None):
+    if request.method != "POST":
+        return redirect(home)
+    context = {"table_type": table_type}
+    filters = {
+        "category": request.POST["category"].lower(),
+        "mechanic": request.POST["mechanic"].lower(),
+        "min_players": int(request.POST["min_players"]),
+        "max_players": int(request.POST["max_players"])
+    }
+    if table_type == "home":
+        game_list = request.user.owned_games.all()
+    elif table_type == "profile":
+        users = User.objects.filter(username=username)
+        if len(users) < 1:
+            return redirect(home)
+        game_list = users[0].owned_games.all()
+    elif table_type == "group":
+        groups = Group.objects.filter(id=id)
+        if len(groups) < 1:
+            return redirect(home)
+        context["group"] = groups[0]
+        game_list = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
+    else:
+        return redirect(home)
+    games = game_table_data(request, game_list, filters=filters)
+    context["games"] = games
+    return render(request, "game_groups/owned_games_table.html", context=context)
+
+@login_required(login_url=login)
+def remove_game(request, bgg_id):
+    games = Game.objects.filter(bgg_id=bgg_id)
+    if len(games) > 0:
+        request.user.owned_games.remove(games[0])
+    return redirect(home)
+
+@login_required(login_url=login)
+def edit_group_name(request, id):
+    if request.method != "POST":
+        return redirect(home)
+    groups = Group.objects.filter(id=id)
+    if len(groups) < 1 or groups[0].owner != request.user:
+        return redirect(home)
+    new_name = request.POST["group_name"]
+    groups[0].name = new_name
+    groups[0].save()
+    return HttpResponse(new_name)
+
+@login_required(login_url=login)
+def get_random_game(request, id):
+    groups = Group.objects.filter(id=id)
+    if len(groups) < 1:
+        return HttpResponse("")
+    game_list = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
+    game = [game_list[randint(0, len(game_list))]]
+    game_table = game_table_data(request, game)
+    context = {
+        "table_type": "group",
+        "group": groups[0],
+        "games": game_table
+    }
+    return render(request, "game_groups/owned_games_table.html", context=context)

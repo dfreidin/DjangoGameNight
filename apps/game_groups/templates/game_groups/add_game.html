@@ -1,38 +1,16 @@
-{% extends "game_groups/base.html" %}
-
-{% block title %}Add a Game{% endblock %}
-
-{% block content %}
-    <script>
-        $(document).ready(function(){
-            $("#bgg_search").submit(function(e){
-                e.preventDefault();
-                $.ajax({
-                    url: "search_games",
-                    method: "post",
-                    data: $(this).serialize(),
-                    success: function(res){
-                        $("#search_results").html(res);
-                    }
-                });
-            });
-        });
-    </script>
-    <h1>Add a Game</h1>
-    <p><a href="{% url 'home' %}">Home</a></p>
-    <h3>Search BGG:</h3>
-    <form id="bgg_search">
-        {% csrf_token %}
-        <p><input id="search_value" type="search" name="search"></p>
-        <p><input type="submit" value="Search"></p>
-    </form>
-    <form id="add_game" action="{% url 'add_game' %}" method="POST">
-        {% csrf_token %}
-        <h3>Search Results:</h3>
-        <p><a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
-        <table class="table">
-            <tbody id="search_results"></tbody>
-        </table>
-        <input type="submit" value="Submit">
-    </form>
-{% endblock %}
+<h3>Search BGG:</h3>
+{% load static %}
+<form id="bgg_game_search" action="{% url 'search_games' %}" spinner="{% static 'game_groups/img/spinning_d20.gif' %}">
+    {% csrf_token %}
+    <p><input id="search_value" type="search" name="search"></p>
+    <p><input class="btn btn-primary" type="submit" value="Search"></p>
+</form>
+<form id="add_game" action="{% url 'add_game' %}" method="POST">
+    {% csrf_token %}
+    <h3>Search Results:</h3>
+    <p><a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
+    <table class="table">
+        <tbody id="game_search_results"></tbody>
+    </table>
+    <input class="btn btn-primary" type="submit" value="Submit">
+</form>
