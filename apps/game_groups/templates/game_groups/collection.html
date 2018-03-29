@@ -1,0 +1,38 @@
+{% extends "game_groups/base.html" %}
+
+{% block title %}BGG Collection{% endblock %}
+
+{% block content %}
+    <script>
+        $(document).ready(function(){
+            $("#bgg_search").submit(function(e){
+                e.preventDefault();
+                $.ajax({
+                    url: "{% url 'get_bgg_collection' %}",
+                    method: "post",
+                    data: $(this).serialize(),
+                    success: function(res){
+                        $("#search_results").html(res);
+                    }
+                });
+            });
+        });
+    </script>
+    <h1>Search a BGG User's Collection</h1>
+    <p><a href="{% url 'home' %}">Home</a></p>
+    <h3>Search BGG:</h3>
+    <form id="bgg_search">
+        {% csrf_token %}
+        <p><input type="search" name="username"></p>
+        <p><input type="submit" value="Search"></p>
+    </form>
+    <form action="{% url 'add_from_collection' %}" method="POST">
+        {% csrf_token %}
+        <h3>Search Results:</h3>
+        <p><a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
+        <table class="table">
+            <tbody id="search_results"></tbody>
+        </table>
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

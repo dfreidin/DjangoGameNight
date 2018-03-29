@@ -1,0 +1,59 @@
+{% extends "game_groups/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <h1>Hello, {{request.user.username}}!</h1>
+    <p><a href="{% url 'logout' %}">Logout</a></p>
+    <hr>
+    <h3>Your Games:</h3>
+    {% include "game_groups/owned_games_table.html" %}
+    <p><a href="{% url 'add_game' %}">Search For a Game</a> | <a href="{% url 'add_from_collection' %}">Add From a BGG Collection</a></p>
+    <hr>
+    <h3>Your Groups:</h3>
+    <p><a class="show_hide" linked-element="groups" href="#">Show/Hide</a></p>
+    <table class="table table-striped groups">
+        <thead>
+            <th>
+                <tr>
+                    <th>Group Name</th>
+                    <th>Members</th>
+                </tr>
+            </th>
+        </thead>
+        <tbody>
+            {% for group in request.user.game_groups.all %}
+                <tr>
+                    <td><a href="{% url 'group' id=group.id %}">{{group.name}}</a></td>
+                    <td>
+                        {% for user in group.members.all %}
+                            <a href="{% url 'profile' username=user.username %}">{{user.username}}</a> 
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="{% url 'new_group' %}">New Group</a></p>
+    <hr>
+    <h3>Other Users:</h3>
+    <p><a class="show_hide" linked-element="users" href="#">Show/Hide</a></p>
+    <table class="table table-striped users">
+        <thead>
+            <th>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                </tr>
+            </th>
+        </thead>
+        <tbody>
+            {% for user in other_users %}
+                <tr>
+                    <td><a href="{% url 'profile' username=user.username %}">{{user.username}}</a></td>
+                    <td>{{user.email}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

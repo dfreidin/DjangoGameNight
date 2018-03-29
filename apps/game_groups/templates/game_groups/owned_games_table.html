@@ -1,0 +1,28 @@
+<p><a class="show_hide" linked-element="games_form" href="#">Show/Hide Table</a> | <a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
+<form class="games_form" action="{% url 'update_ratings' %}" method="POST">
+    {% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Box Image</th>
+                <th>Name</th>
+                <th>Would you like to play this?</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for game in games %}
+                <tr>
+                    <td><img class="game_images" src="{{game.thumb}}"></td>
+                    <td><a href="{{game.link}}" target="_blank">{{game.name}}</a></td>
+                    <td><select name="{{game.bgg_id}}">
+                        <option value="10" {% if game.rating == 10 %}selected{% endif %}>Definitely!</option>
+                        <option value="1" {% if game.rating == 1 %}selected{% endif %}>Sure</option>
+                        <option value="-1" {% if game.rating == -1 %}selected{% endif %}>I'd rather not</option>
+                        <option value="-100" {% if game.rating == -100 %}selected{% endif %}>Absolutely not!</option>
+                    </select></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <input type="submit" value="Update ratings" class="btn btn-primary">
+</form>

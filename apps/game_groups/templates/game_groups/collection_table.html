@@ -1,0 +1,7 @@
+{% for game in results %}
+    <tr>
+        <td><input type="checkbox" name="game_choices" value="{{game.bgg_id}}"></td>
+        <td class="game_images"><img src="{{game.thumb}}"></td>
+        <td>{{game.name}}</td>
+    </tr>
+{% endfor %}

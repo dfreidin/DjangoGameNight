@@ -1,0 +1,30 @@
+{% extends "game_groups/base.html" %}
+
+{% block title %}Login/Register{% endblock %}
+
+{% block content %}
+    <style>
+        .error {
+            color: red;
+        }
+    </style>
+    {% if messages %}
+        {% for message in messages %}
+            <h4 class="{{message.tags}}">{{message}}</h4>
+        {% endfor %}
+        <hr>
+    {% endif %}
+    <h1>Login</h1>
+    <form action="{% url 'login' %}" method="POST">
+        {% csrf_token %}
+        {{log_form.as_p}}
+        <input type="submit" value="Submit">
+    </form>
+    <hr>
+    <h1>Register</h1>
+    <form action="{% url 'register' %}" method="POST">
+        {% csrf_token %}
+        {{reg_form.as_p}}
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}
