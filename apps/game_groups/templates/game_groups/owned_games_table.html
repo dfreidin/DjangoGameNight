@@ -6,9 +6,9 @@
             <tr>
                 <th>Box Image</th>
                 <th>Name</th>
-                <th class="d-none d-table-cell-lg">Categories</th>
-                <th class="d-none d-table-cell-lg">Mechanics</th>
-                <th class="d-none d-table-cell-lg">Player Count</th>
+                <th class="d-none d-lg-table-cell">Categories</th>
+                <th class="d-none d-lg-table-cell">Mechanics</th>
+                <th class="d-none d-lg-table-cell">Player Count</th>
                 {% if group %}
                     <th>Owned By</th>
                 {% else %}
@@ -24,9 +24,9 @@
                 <tr>
                     <td><img class="game_images" src="{{game.thumb}}"></td>
                     <td><a href="{{game.link}}" target="_blank">{{game.name}}</a></td>
-                    <td class="d-none d-table-cell-lg">{{game.categories}}</td>
-                    <td class="d-none d-table-cell-lg">{{game.mechanics}}</td>
-                    <td class="d-none d-table-cell-lg">{{game.player_count}}</td>
+                    <td class="d-none d-lg-table-cell">{{game.categories}}</td>
+                    <td class="d-none d-lg-table-cell">{{game.mechanics}}</td>
+                    <td class="d-none d-lg-table-cell">{{game.player_count}}</td>
                     {% if group %}
                         <td>
                             {% for user in group.members.all %}

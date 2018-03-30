@@ -39,39 +39,7 @@
     <h3>Members:</h3>
     <p><a class="show_hide" linked-element="members" href="#">Show/Hide</a></p>
     <div class="members">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    {% if group.owner == request.user %}
-                        <th>Actions</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in group.members.all %}
-                    <tr>
-                        <td><a href="{% url 'profile' username=user.username %}">{{user.username}}</a></td>
-                        <td>{{user.email}}</td>
-                        {% if group.owner == request.user %}
-                            <td><a href="{% url 'remove_from_group' id=group.id username=user.username %}">{% if user != request.user %}Remove{% endif %}</a></td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if group.owner == request.user %}
-            <form action="{% url 'add_to_group' id=group.id %}" method="POST">
-                {% csrf_token %}
-                <select name="username">
-                    {% for user in other_users %}
-                        <option value="{{user.username}}">{{user.username}}</option>
-                    {% endfor %}
-                </select>
-                <input class="btn btn-secondary" type="submit" value="Add to group">
-            </form>
-        {% endif %}
+        {% include "game_groups/group_members.html" %}
     </div>
     <hr>
     <h3>Suggested Games:</h3>

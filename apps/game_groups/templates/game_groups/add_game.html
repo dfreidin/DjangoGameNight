@@ -8,7 +8,7 @@
 <form id="add_game" action="{% url 'add_game' %}" method="POST">
     {% csrf_token %}
     <h3>Search Results:</h3>
-    <p><a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
+    <p><a class="show_hide" linked-element="game_search_images" href="#">Show/Hide Images</a></p>
     <table class="table">
         <tbody id="game_search_results"></tbody>
     </table>

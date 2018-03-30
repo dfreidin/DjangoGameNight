@@ -46,6 +46,15 @@ class UserRegForm(forms.ModelForm):
             raise forms.ValidationError("Password does not match")
         return cleaned_data
 
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "email"
+        ]
+
 class LoginForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput())
     class Meta:

@@ -5,13 +5,14 @@ from django.shortcuts import render, redirect, HttpResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import forms as auth_forms, authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import forms as auth_forms, authenticate, login as auth_login, logout as auth_logout, update_session_auth_hash
 from django.utils.text import slugify
 from django.db.models import Sum
 import xml.etree.ElementTree as ET
 import requests
 from random import randint
 from time import sleep
+from urlparse import urlparse
 from .models import *
 
 # Create your views here.
@@ -24,13 +25,13 @@ def login(request):
     return redirect(index)
 
 def index(request):
-    reg_form = UserRegForm()
+    reg_form = auth_forms.UserCreationForm()
     log_form = LoginForm()
     return render(request, "game_groups/index.html", {"reg_form": reg_form, "log_form": log_form})
 
 def register(request):
     if request.method == "POST":
-        form = UserRegForm(request.POST)
+        form = auth_forms.UserChangeForm(request.POST)
         if form.is_valid():
             new_user = form.save(commit=False)
             new_user.save()
@@ -41,12 +42,34 @@ def register(request):
 
 @login_required(login_url=login)
 def edit(request):
+    if request.method == "GET":
+        info = {
+            "first_name": request.user.first_name,
+            "last_name": request.user.last_name,
+            "email": request.user.email
+        }
+        edit_form = UserEditForm(instance=request.user, initial=info)
+        pw_form = auth_forms.PasswordChangeForm(request.user)
+        return render(request, "game_groups/edit.html", {"edit_form": edit_form, "pw_form": pw_form})
     if request.method == "POST":
         form = UserEditForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
         return redirect(home)
     return redirect(index)
+
+@login_required(login_url=login)
+def change_password(request):
+    if request.method != "POST":
+        return redirect(edit)
+    form = auth_forms.PasswordChangeForm(request.user, request.POST)
+    if form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Password updated")
+    else:
+        messages.error(request, "Password was not updated")
+    return redirect(home)
 
 @login_required(login_url=login)
 def logout(request):
@@ -119,6 +142,9 @@ def search_games(request):
     print url
     response = requests.get(url).content
     search_data = ET.XML(response)
+    if search_data.attrib["total"] == "0":
+        messages.error(request, "No results found")
+        return render(request, "game_groups/flash_message.html")
     id_list = ""
     for game in search_data.iter("item"):
         if id_list != "":
@@ -145,7 +171,11 @@ def update_ratings(request):
         r = Rating.objects.get(game=game, user=request.user)
         r.rating = request.POST[key]
         r.save()
-    return redirect(home)
+    path = urlparse(request.META["HTTP_REFERER"]).path
+    if path[:10] == "/profiles/":
+        return redirect(profile, username=path[10:])
+    else:
+        return redirect(home)
 
 @login_required(login_url=login)
 def profile(request, username):
@@ -165,7 +195,7 @@ def new_group(request):
 @login_required(login_url=login)
 def group(request, id):
     groups = Group.objects.filter(id=id)
-    if len(groups) < 1:
+    if len(groups) < 1 or request.user not in groups[0].members.all():
         return redirect(home)
     other_users = User.objects.exclude(game_groups=groups[0])
     sorted_games = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
@@ -179,13 +209,12 @@ def add_to_group(request, id):
     groups = Group.objects.filter(id=id)
     if len(groups) < 1:
         return redirect(home)
-    if "username" not in request.POST:
-        return redirect(group, id=groups[0].id)
-    users = User.objects.filter(username=request.POST["username"])
-    if groups[0].owner != request.user or len(users) < 1:
-        return redirect(group, id=groups[0].id)
-    groups[0].members.add(users[0])
-    return redirect(group, id=groups[0].id)
+    if "username" in request.POST:
+        users = User.objects.filter(username=request.POST["username"])
+        if groups[0].owner == request.user and len(users) > 0:
+            groups[0].members.add(users[0])
+            other_users = User.objects.exclude(game_groups=groups[0])
+    return render(request, "game_groups/group_members.html", {"group": groups[0], "other_users": other_users})
 
 @login_required(login_url=login)
 def get_bgg_collection(request):
@@ -202,7 +231,7 @@ def get_bgg_collection(request):
         messages.error(request, games_data.findtext("error/message"))
         return render(request, "game_groups/flash_message.html")
     if games_data.attrib["totalitems"] == "0":
-        messages.error(request, "No results found")
+        messages.error(request, "No games found")
         return render(request, "game_groups/flash_message.html")
     result_data = []
     for game in games_data.iter("item"):
@@ -229,16 +258,17 @@ def add_from_collection(request):
 def remove_from_group(request, id, username):
     groups = Group.objects.filter(id=id)
     users = User.objects.filter(username=username)
-    if len(groups) == 0 or len(users) == 0 or groups[0].owner != request.user:
-        return redirect(home)
-    groups[0].members.remove(users[0])
-    return redirect(group, id=id)
+    if len(groups) > 0 and len(users) > 0 and groups[0].owner == request.user:
+        groups[0].members.remove(users[0])
+    other_users = User.objects.exclude(game_groups=groups[0])
+    return render(request, "game_groups/group_members.html", {"group": groups[0], "other_users": other_users})
 
 @login_required(login_url=login)
 def filter_table(request, table_type, username=None, group_id=None):
+    context = {"table_type": table_type}
+    filters = None
     if request.method != "POST":
         return redirect(home)
-    context = {"table_type": table_type}
     filters = {
         "category": request.POST["category"].lower(),
         "mechanic": request.POST["mechanic"].lower(),

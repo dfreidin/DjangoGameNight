@@ -1,7 +1,12 @@
+<tr>
+    <td><input type="checkbox" id="select_all_games"></td>
+    <td></td>
+    <td>Select All</td>
+</tr>
 {% for game in results %}
     <tr>
-        <td><input type="checkbox" name="game_choices" value="{{game.bgg_id}}"></td>
-        <td class="game_images"><img src="{{game.thumb}}"></td>
+        <td><input type="checkbox" class="user_game_choices" name="game_choices" value="{{game.bgg_id}}"></td>
+        <td><img class="user_search_images" src="{{game.thumb}}"></td>
         <td>{{game.name}}</td>
     </tr>
 {% endfor %}

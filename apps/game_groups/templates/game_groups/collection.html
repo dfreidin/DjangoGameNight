@@ -5,10 +5,10 @@
     <p><input type="search" name="username"></p>
     <p><input class="btn btn-primary" type="submit" value="Search"></p>
 </form>
-<form action="{% url 'add_from_collection' %}" method="POST">
+<form id="add_from_collection" action="{% url 'add_from_collection' %}" method="POST">
     {% csrf_token %}
     <h3>Search Results:</h3>
-    <p><a class="show_hide" linked-element="game_images" href="#">Show/Hide Images</a></p>
+    <p><a class="show_hide" linked-element="user_search_images" href="#">Show/Hide Images</a></p>
     <table class="table">
         <tbody id="user_search_results"></tbody>
     </table>

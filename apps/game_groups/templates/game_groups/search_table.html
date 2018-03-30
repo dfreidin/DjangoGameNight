@@ -1,7 +1,7 @@
 {% for game in results %}
     <tr>
         <td><input type="radio" name="game_choice" value="{{game.bgg_id}}"></td>
-        <td class="game_images"><img src="{{game.thumb}}"></td>
+        <td><img class="game_search_images" src="{{game.thumb}}"></td>
         <td>{{game.name}}</td>
     </tr>
 {% endfor %}

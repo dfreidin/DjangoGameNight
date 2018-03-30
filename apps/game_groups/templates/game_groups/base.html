@@ -11,10 +11,21 @@
         <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>
         {% load static %}
         <script src='{% static "game_groups/js/common.js" %}'></script>
+        <style>
+            .error {
+                color: red;
+            }
+            .success {
+                color: green;
+            }
+        </style>
     </head>
     <body>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">Game Knight</a>
+        <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">
+                <img src="{% static 'game_groups/img/logo.png' %}" width="40">
+                Game Knight
+            </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -36,6 +47,7 @@
                 </ul>
                 <ul class="navbar-nav mr-right">
                     {% if request.user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'edit' %}">Edit Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>

@@ -1,19 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>Edit User Info</title>
-        <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>
-    </head>
-    <body>
-        <div class="containter">
-            <form action="{% url 'edit' %}" method="POST">
-                {% csrf_token %}
-                {{form.as_p}}
-                <input type="submit" value="Submit">
-            </form>
-        </div>
-    </body>
-</html>
+{% extends "game_groups/base.html" %}
+
+{% block title %}{{user.username}}{% endblock %}
+
+{% block content %}
+    <h1>Edit your information:</h1>
+    <form action="{% url 'edit' %}" method="POST">
+        {% csrf_token %}
+        {{edit_form.as_p}}
+        <input type="submit" value="Submit">
+    </form>
+    <h3>Change your password:</h3>
+    <form action="{% url 'pw_change' %}" method="POST">
+        {% csrf_token %}
+        {{pw_form.as_p}}
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

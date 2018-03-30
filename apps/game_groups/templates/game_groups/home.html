@@ -4,6 +4,7 @@
 
 {% block content %}
     <h1>Hello, {{request.user.username}}!</h1>
+    {% include "game_groups/flash_message.html" %}
     <hr>
     <h3>Your Games:</h3>
     {% include "game_groups/game_filter.html" %}
