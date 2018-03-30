@@ -31,7 +31,7 @@ def index(request):
 
 def register(request):
     if request.method == "POST":
-        form = auth_forms.UserChangeForm(request.POST)
+        form = auth_forms.UserCreationForm(request.POST)
         if form.is_valid():
             new_user = form.save(commit=False)
             new_user.save()
