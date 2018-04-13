@@ -76,12 +76,18 @@ def logout(request):
     auth_logout(request)
     return redirect(index)
 
-def game_table_data(request, games, filters=None):
+def game_table_data(request, games, filters=None, rated=False):
     id_list = ""
-    for game in games:
-        if id_list != "":
-            id_list += ","
-        id_list += str(game.bgg_id)
+    if rated:
+        for game, r in games:
+            if id_list != "":
+                id_list += ","
+            id_list += str(game.bgg_id)
+    else:
+        for game in games:
+            if id_list != "":
+                id_list += ","
+            id_list += str(game.bgg_id)
     games_xml = requests.get("https://www.boardgamegeek.com/xmlapi2/thing?id="+id_list).content
     games_data = ET.XML(games_xml)
     list_data = []
@@ -192,14 +198,24 @@ def new_group(request):
     new_group.members.add(request.user)
     return redirect(group, id=new_group.id)
 
+def sorted_group_game_list(group):
+    unsorted_games = Game.objects.filter(owners__game_groups=group)
+    sorted_games = []
+    for g in unsorted_games:
+        r = g.ratings.filter(user__game_groups=group).aggregate(Sum("rating"))["rating__sum"]
+        if r >= 0:
+            sorted_games.append([g,r])
+    sorted_games.sort(key=lambda pair: pair[1], reverse=True)
+    return sorted_games
+
 @login_required(login_url=login)
 def group(request, id):
     groups = Group.objects.filter(id=id)
     if len(groups) < 1 or request.user not in groups[0].members.all():
         return redirect(home)
     other_users = User.objects.exclude(game_groups=groups[0])
-    sorted_games = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
-    games = game_table_data(request, sorted_games)
+    sorted_games = sorted_group_game_list(groups[0])
+    games = game_table_data(request, sorted_games, rated=True)
     return render(request, "game_groups/group.html", {"group": groups[0], "other_users": other_users, "games": games, "table_type": "group"})
 
 @login_required(login_url=login)
@@ -287,7 +303,8 @@ def filter_table(request, table_type, username=None, group_id=None):
         if len(groups) < 1:
             return redirect(home)
         context["group"] = groups[0]
-        game_list = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
+        sorted_games = sorted_group_game_list(groups[0])
+        games = game_table_data(request, sorted_games, rated=True)
     else:
         return redirect(home)
     games = game_table_data(request, game_list, filters=filters)
@@ -318,8 +335,8 @@ def get_random_game(request, id):
     groups = Group.objects.filter(id=id)
     if len(groups) < 1:
         return HttpResponse("")
-    game_list = Game.objects.filter(owners__game_groups=groups[0]).annotate(total_rating=Sum("ratings__rating")).filter(total_rating__gte=0).order_by("-total_rating")
-    game = [game_list[randint(0, len(game_list))]]
+    sorted_games = sorted_group_game_list(groups[0])
+    game = [sorted_games[randint(0, len(sorted_games))][0]]
     game_table = game_table_data(request, game)
     context = {
         "table_type": "group",
