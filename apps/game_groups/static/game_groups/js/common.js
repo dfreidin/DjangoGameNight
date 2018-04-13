@@ -23,17 +23,6 @@ $(document).ready(function(){
         get_game_table();
     });
     $("#filter_form").children().change(get_game_table);
-    // $("#add_game, #add_from_collection").submit(function(e){
-    //     e.preventDefault();
-    //     $.ajax({
-    //         url: $(this).parent().attr("action"),
-    //         method: "post",
-    //         data: $(this).parent().serialize(),
-    //         success: function(res){
-    //             $("#filter_form").submit();
-    //         }
-    //     });
-    // });
     $("#group_name_form").submit(function(e){
         e.preventDefault()
         $.ajax({
