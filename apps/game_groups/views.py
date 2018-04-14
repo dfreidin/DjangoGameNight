@@ -199,7 +199,7 @@ def new_group(request):
     return redirect(group, id=new_group.id)
 
 def sorted_group_game_list(group):
-    unsorted_games = Game.objects.filter(owners__game_groups=group)
+    unsorted_games = Game.objects.filter(owners__game_groups=group).distinct()
     sorted_games = []
     for g in unsorted_games:
         r = g.ratings.filter(user__game_groups=group).aggregate(Sum("rating"))["rating__sum"]
